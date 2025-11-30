@@ -9,6 +9,18 @@ from drf_yasg import openapi
 from . models import User , EmployeeProfile 
 from . utils import send_otp_email , get_tokens_for_user
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import api_view
+
+
+from helpers.ai_client import ai_chat
+
+
+#----------Ai Chat Bot-----------
+@api_view(["POST"])
+def chatbot(request):
+    message = request.data.get("message", "")
+    reply = ai_chat(message)
+    return Response({"reply": reply})
 
 
 

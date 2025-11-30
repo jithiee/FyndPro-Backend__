@@ -1,8 +1,12 @@
 from django.urls import path
-from .views import RegisterView , VerifyOTPView , ResendOTPView , LoginView ,ForgotPasswordView , ResetPasswordView ,ChangePasswordView , UserProfileAPIView , EmployeeProfileAPIView
+from .views import RegisterView , VerifyOTPView , ResendOTPView , LoginView ,ForgotPasswordView , ResetPasswordView ,ChangePasswordView , UserProfileAPIView , EmployeeProfileAPIView , chatbot
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
+    
+    #------Ai bot-----
+    path("chatbot/", chatbot),
+    
     #-------Auth----------
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('auth/verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
