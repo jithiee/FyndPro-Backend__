@@ -10,17 +10,119 @@ from . models import User , EmployeeProfile
 from . utils import send_otp_email , get_tokens_for_user
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view
-
+from booking.models import Booking , Complaint
 
 from helpers.ai_client import ai_chat
 
 
 #----------Ai Chat Bot-----------
+# @api_view(["POST"])
+# def chatbot(request):
+#     message = request.data.get("message", "")
+#     reply = ai_chat(message)
+#     return Response({"reply": reply})
+
 @api_view(["POST"])
 def chatbot(request):
+    user = request.user     # logged-in user (JWT/Session)
+
     message = request.data.get("message", "")
-    reply = ai_chat(message)
+
+    # -------------------------
+    # 1️⃣ Get Basic User Info
+    # -------------------------
+    user_info = {
+        "name": user.full_name,
+        "email": user.email,
+        "role": user.role,
+        "phone": user.phone,
+        "location": user.location,
+    }
+
+    # -------------------------
+    # 2️⃣ Get Employee Profile (if role == employee)
+    # -------------------------
+    employee_info = None
+    if user.role == "employee":
+        profile = user.employee_profile
+        employee_info = {
+            "title": profile.title,
+            "experience": profile.experience,
+            "hourly_rate": float(profile.hourly_rate),
+            "skills": profile.skills,
+            "available": profile.available,
+            "rating": profile.average_rating,
+            "bio": profile.bio,
+        }
+
+    # -------------------------
+    # 3️⃣ Get Client Bookings
+    # -------------------------
+    bookings = Booking.objects.filter(client=user).order_by("-created_at")[:5]
+
+    booking_info = []
+    for b in bookings:
+        booking_info.append({
+            "id": str(b.book_id),
+            "employee": b.employee.user.full_name,
+            "job": b.job,
+            "amount": float(b.amount) if b.amount else None,
+            "date": b.booking_date.strftime("%Y-%m-%d %H:%M"),
+            "status": b.status,
+            "is_paid": b.is_paid,
+        })
+
+    # -------------------------
+    # 4️⃣ Employee appointment list (if logged-in is employee)
+    # -------------------------
+    employee_appointments = []
+    if user.role == "employee":
+        appts = Booking.objects.filter(employee=user.employee_profile).order_by("-created_at")[:5]
+        for a in appts:
+            employee_appointments.append({
+                "id": str(a.book_id),
+                "client": a.client.full_name,
+                "job": a.job,
+                "date": a.booking_date.strftime("%Y-%m-%d %H:%M"),
+                "status": a.status,
+            })
+
+    # -------------------------
+    # 5️⃣ Recent complaints
+    # -------------------------
+    # complaints = Complaint.objects.filter(client=user).order_by("-created_at")[:3]
+    # complaint_info = [
+    #     {
+    #         "subject": c.subject,
+    #         "status": c.status,
+    #         "booking_id": str(c.booking.book_id) if c.booking else None,
+    #     }
+    #     for c in complaints
+    # ]
+
+    # -------------------------
+    # 6️⃣ Build AI Context
+    # -------------------------
+    context = {
+        "user_info": user_info,
+        "employee_profile": employee_info,
+        "recent_bookings": booking_info,
+        "employee_appointments": employee_appointments,
+        # "complaints": complaint_info,
+    }
+
+    final_message = (
+        "Here is the authenticated user's context. "
+        "Use this ONLY to help answer their question:\n\n"
+        f"{context}\n\n"
+        f"User message: {message}"
+    )
+
+    reply = ai_chat(final_message)
+
     return Response({"reply": reply})
+
+
 
 
 
