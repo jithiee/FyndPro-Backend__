@@ -22,6 +22,7 @@ from helpers.ai_client import ai_chat
 #     reply = ai_chat(message)
 #     return Response({"reply": reply})
 
+
 @api_view(["POST"])
 def chatbot(request):
     user = request.user     # logged-in user (JWT/Session)
@@ -29,7 +30,7 @@ def chatbot(request):
     message = request.data.get("message", "")
 
     # -------------------------
-    # 1️⃣ Get Basic User Info
+    # 1) Get Basic User Info
     # -------------------------
     user_info = {
         "name": user.full_name,
@@ -40,7 +41,7 @@ def chatbot(request):
     }
 
     # -------------------------
-    # 2️⃣ Get Employee Profile (if role == employee)
+    # 2) Get Employee Profile (if role == employee)
     # -------------------------
     employee_info = None
     if user.role == "employee":
@@ -56,7 +57,7 @@ def chatbot(request):
         }
 
     # -------------------------
-    # 3️⃣ Get Client Bookings
+    # 3) Get Client Bookings
     # -------------------------
     bookings = Booking.objects.filter(client=user).order_by("-created_at")[:5]
 
@@ -73,7 +74,7 @@ def chatbot(request):
         })
 
     # -------------------------
-    # 4️⃣ Employee appointment list (if logged-in is employee)
+    # 4️) Employee appointment list (if logged-in is employee)
     # -------------------------
     employee_appointments = []
     if user.role == "employee":
@@ -88,7 +89,7 @@ def chatbot(request):
             })
 
     # -------------------------
-    # 5️⃣ Recent complaints
+    # 5️) Recent complaints
     # -------------------------
     # complaints = Complaint.objects.filter(client=user).order_by("-created_at")[:3]
     # complaint_info = [
@@ -101,7 +102,7 @@ def chatbot(request):
     # ]
 
     # -------------------------
-    # 6️⃣ Build AI Context
+    # 6️) Build AI Context
     # -------------------------
     context = {
         "user_info": user_info,
